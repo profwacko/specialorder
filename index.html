@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href="https://fonts.googleapis.com/css?family=Russo+One|Titillium+Web" rel="stylesheet">
+        <meta charset=utf-8 />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <style type="text/css">
+        body {
+            float:none;
+            text-align: center;
+            background: url(http://i.imgur.com/sjJrSio.png) no-repeat fixed;
+            background-size: cover;
+            background-color: #000000;
+            margin: 15px;
+            font-family:'Titillium Web','Russo One', sans-serif;
+            font-size: 12px;
+            color: #666;
+        }
+        h2 {
+            text-align: center;
+            padding-left: 0px;
+            font-weight: normal;
+            font-size: 28px;
+            color:rgb(255,255,255);
+
+        }
+
+        form{
+            text-align: center;
+            font-family: Century Gothic, Helvetica;
+        }
+
+        #status{
+            text-align: center;
+            padding-left: 0px;
+            font-weight: normal;
+            font-size: 18px;
+            color:rgb(255,255,255);
+        }
+        #main{
+            text-align: center;
+            padding-left: 0px;
+            font-weight: normal;
+            font-size: 18px;
+            color:rgb(255,255,255);
+        }
+
+        #button{
+            background-color: none;
+            display: none;
+            text-align: center;
+            padding-left: 0px;
+            margin: auto;
+            width: 30%;
+        }
+
+        #cards{
+            margin: auto;
+        }
+        .card{
+
+            height: 86mm;
+            width: 62mm;
+        }
+        @page {
+            margin: 0mm;
+            background-color: #ffffff;
+            .page-break {
+                page-break-after: auto;
+            }
+        }
+
+        @media print{
+            body * {
+                visibility:hidden;
+            }
+            .page-break {
+                display: inline;
+                margin: 0mm;
+                page-break-after: auto;
+            }
+             #cards, #cards * {
+                visibility:visible;
+            }
+        }
+
+        </style>
+
+        <title>
+            Special Order
+        </title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+        <script>
+        $(function(){
+            var proxyList = [];
+
+            $.getJSON('https://netrunnerdb.com/api/2.0/public/cards', function(data){
+
+                cards = data;
+                console.log(cards);
+                $("#status").text('Ready');
+                $("#loading").fadeOut("slow");
+                $("#button").fadeIn("slow");
+            });
+
+            $("button").click(function(){
+                $("#main").slideUp("slow");
+                //$(this).css({"background-color":"white"});
+                //parse input
+                inputcards = $("textarea#input").val(); //get cards from input
+                //console.log("Processing Data");
+                tempcards = inputcards.match(/\d .+/g); //regex for all cards
+                //console.log(tempcards);
+                $.each(tempcards,function(index,value){
+                    card = {"name":value.substring(2),"quantity":value.substring(0,1),"code":0,"url":""};
+                    proxyList.push(card);
+                    //console.log(card);
+                });
+                var cols = 0;
+                var row = "";
+                var page = 0;
+                $.each(proxyList,function(index,value){
+                    $.each(cards.data,function(cardsindex,cardsvalue){
+                        if(value.name == cardsvalue.title && cardsvalue.pack_code != "core"){
+                            proxyList[index].code = cardsvalue.code;
+                            if(cardsvalue.image_url){
+                                proxyList[index].url = cardsvalue.image_url;
+                                console.log("I have a image_url");
+                        }
+                        else{
+                            proxyList[index].url =cards.imageUrlTemplate.replace("{code}",cardsvalue.code);
+                        }
+                            //console.log("Wala akong image_url");
+                            
+                            //console.log(cardsvalue.code);
+                            //console.log(cards.imageUrlTemplate.replace("{code}",cardsvalue.code))
+                            console.log(proxyList[index].name);
+                            var i = 0;
+                            while(i < proxyList[index].quantity){
+                                if(cols==0){
+                                    if(page == 0){
+                                        row+="<table class=\"page-break\" id=\"cards\"><tr>&nbsp;</tr><tr>";
+                                        console.log("new table");
+                                    }
+                                    else{
+                                        row+="<tr>";
+                                        console.log("new row")
+                                    }
+                                    //$("#cards").append("<tr>");
+                                    }
+                                    console.log("cols: "+cols);
+                                    console.log("page: "+ page);
+                                    row+="<td><img class=\"card\" src="+proxyList[index].url+"></td>";
+                                    //$("#cards").append("<td><img class=\"card\" src="+proxyList[index].url+"></td>");
+                                if(cols==2 || index==proxyList.length){
+                                    //row+="</tr>";
+                                    if(page == 8 && !(index==proxyList.length)){
+                                        //row+="</tr><tr><th>&nbsp;</th></tr></table>";
+                                        row+="</tr></table>";
+                                        console.log("table and row end");
+                                        console.log(row);
+                                        $("#cards").append(row);
+                                        row = "";
+                                        cols = 0;
+                                        page = 0;
+                                    }
+                                    else{
+                                        row+="</tr>";
+                                        console.log("row end");
+                                        //$("#cards").append(row);
+                                        //row = "";
+                                        cols = 0;
+                                        page++;
+                                    }
+
+                                }
+                                else{
+                                cols++;
+                                page++;  
+                                }  
+                                i++;
+                            }
+                        }
+                    });
+                });
+                if(page<8);{
+                    row+="</table>"
+                    console.log(row);
+                    $("#cards").append(row);
+                    console.log("last row printed")
+                }
+
+            });
+
+        });
+        </script>
+    </head>
+    <body>
+        <div id="main">
+        <h2>Special Order</h2>
+        <form>
+            <textarea id="input" rows="25" cols="50">
+Quickly get print-format images of your netrunner proxies.
+
+Copy/paste jinteki.net format cards here. 
+
+Then file -> print.
+
+Refresh page to print more.
+
+Ex.
+3 Dirty Laundry
+3 Emergent Creativity
+3 Employee Strike
+1 Mad Dash
+1 Stimhack
+3 Sure Gamble
+1 Brain Cage
+3 Brain Chip
+2 Sports Hopper
+2 Always Be Running
+3 Daily Casts
+3 Liberated Account
+2 The Turning Wheel
+3 Aumakua
+1 Black Orchestra
+3 Femme Fatale
+1 Paperclip
+2 Datasucker
+3 Multithreader
+2 RNG Key
+            </textarea>
+            <br>
+        </form>
+
+        <br>
+        <div id="loading">
+            Loading cards from netrunnerdb...
+        </div>
+        <div id="button">
+            <button>Generate Proxies</button>
+        </div>
+    </div>
+        <div id="cards">
+        </div>
+    </body>
+
+</html>
